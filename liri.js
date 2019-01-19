@@ -14,6 +14,10 @@ switch (liri) {
     case "movie-This" :
     movieThis();
     break
+
+    case "concert-this":
+    concertThis();
+    break
 };
 
 function movieThis() {
