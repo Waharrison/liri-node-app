@@ -9,15 +9,6 @@ var spotify = new Spotify({
   secret: "4799ecf6e75647749e60e6bb5040d2cf"
 });
  
-spotify.search({ type: 'track', query: 'All the Small Things' }, function(err, data) {
-  if (err) {
-    return console.log('Error occurred: ' + err);
-  }
- 
-console.log(data); 
-});
-
-
 
 
 exports.spotify = {

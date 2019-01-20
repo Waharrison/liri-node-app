@@ -8,6 +8,12 @@ Overview
  - OMDB
  - Bands in Town
 
+ Technology used
+ - Moment
+ - Axios
+ - DotEnv
+ - Node-Spotify-API
+
  How it works:
  Liri.js can take in one of the comands below and return results in the terminal or console.
 
