@@ -1,84 +1,110 @@
 require("dotenv").config();
-var keys = require("./keys.js");
-var fs = require("fs");
-var axios = require("axios");
-var liri = process.argv[2];
-var movieName = process.argv[3];
+var fs=require('fs');
+var keys = require("./key.js");
+var axios = require('axios');
+var moment = require('moment');
+var Spotify = require('node-spotify-api');
 var spotify = new Spotify(keys.spotify);
+var action = process.argv[2];
+var search = process.argv.slice(3);
 
-switch (liri) {
-    case "spotify-this-song":
-        spotifySong();
-        break;
+var command = {
+    'concert-this': function () {
+        search = search.join("");
+        var queryUrl = "https://rest.bandsintown.com/artists/" + search + "/events?app_id=codingbootcamp";
 
-    case "movie-This":
-        movieThis();
-        break
+        console.log(queryUrl);
 
-    case "concert-this":
-        concertThis();
-        break
-
-    case "do-what-it-says":
-        doWhatItSays();
-        break
-};
-
-function movieThis() {
-
-    if (!movieName) {
-        movieName = "mr. nobody"
-    }
-    else {
-        var queryUrl = "http://www.omdbapi.com/?t=" + movieName + "&y=&plot=short&apikey=trilogy";
-
-        request(queryUrl, function (response, body) {
-            var movieResponse = JSON.parse(body);
-            var results =
-                "Title: " + movieResponse.Title + "\n" +
-                "Year: " + movieResponse.Year + "\n" +
-                "IMDB Rating: " + movieResponse.Ratings[0].value + "\n" +
-                "Rotten Tomatoes Rating " + movieResponse.Ratings[1].value + "\n" +
-                "Origin Country: " + movieResponse.Country + "\n" +
-                "Language: " + movieResponse.Language + "\n" +
-                "Plot: " + movieResponse.Plot + "\n" +
-                "Actors: " + movieResponse.Actors + "\n"
-
-            fs.appendFile("random.txt", results, function (err) {
-                console.log("saved")
+        axios.get(queryUrl)
+            .then(function (response) {
+                var results = response.data;
+                for (var i = 0; i < results.length; i++) {
+                    console.log(results[i].venue.name);
+                    if (results[i].venue.region === "") {
+                        console.log(results[i].venue.city + ", " + results[i].venue.country);
+                    }
+                    console.log(results[i].venue.city + ", " + results[i].venue.region);
+                    console.log(moment(results[i].datetime).format("MM/DD/YYYY"));
+                    console.log("-----------------")
+                }
             })
-            console.log(results);
+            .catch(function (error) {
+                console.log(error);
+            });
+    },
+    'spotify-this-song': function () {
+        search;
+        spotify.search({ type: 'track', query: search }, function (err, data) {
+            if (err) {
+                return console.log('Error occurred: ' + err);
+            }
+            for (var j = 0; j < data.tracks.items.length; j++) {
+                var art = [];
+                for (var i = 0; i < data.tracks.items[j].album.artists.length; i++) {
+                    // console.log(data.tracks.items[j].album.artists[i].name);
+                    art.push(data.tracks.items[j].album.artists[i].name);
+                }
+                console.log(art.join(", "));
+                console.log(data.tracks.items[j].name);
+                console.log(data.tracks.items[j].preview_url);
+                console.log(data.tracks.items[j].album.name);
+                console.log("-----------------");
+            }
         });
-    }
-};
+    },
+    'movie-this': function(){
+        search = search.join("+");
 
-function spotifySong(songName) {
-     if (!songName) {
-         songName= "The Sign";
-     }
+        if (!process.argv[3]) {
 
-     spotify.search({ type: 'track', query:songName}, function(err, data) {
-        if (err) {
-          return console.log('Error occurred: ' + err);
+            axios.get("http://www.omdbapi.com/?t=mr+nobody&apikey=trilogy")
+            .then(function(response){
+                console.log("Have you seen Mr. Nobody? You should!");
+                console.log("It's on Netflix!");
+                console.log(" ");
+                console.log("Title: " + response.data.Title);
+                console.log("Released: " + response.data.Year);
+                console.log("IMDB rating: " + response.data.Ratings[0].Value);
+                console.log("Prodoction country: " + response.data.Country);
+                console.log("Language: " + response.data.Language);
+                console.log("Plot: " + response.data.Plot);
+                console.log("Actors: " + response.data.Actors);
+                console.log("-----------------")
+            })
+            .catch(function (error) {
+                console.log(error);
+            });
+        }else {
+            var queryUrl = "http://www.omdbapi.com/?t=" + search + "&apikey=trilogy";
+
+            axios.get(queryUrl)
+            .then(function(response){
+                console.log("Title: " + response.data.Title);
+                console.log("Released: " + response.data.Year);
+                console.log("IMDB rating: " + response.data.Ratings[0].Value);
+                console.log("Prodoction country: " + response.data.Country);
+                console.log("Language: " + response.data.Language);
+                console.log("Plot: " + response.data.Plot);
+                console.log("Actors: " + response.data.Actors);
+                console.log("-----------------")
+            })
+            .catch(function (error) {
+                console.log(error);
+            });
         }
-        var results = 
-        "Artist: " + data.tracks.items[0].artist[0].name + "\n" +
-        "Song Name: " + data.tracks.items[0].name + "\n" +
-        "Album Name: " + data.tracks.items[0].album.name + "\n" +
-        "Preview Link: " + data.tracks.items[0].preview_url + "\n";
-       
-        fs.appendFile("random.txt", results, function (err) {
-            console.log ("saved");
+    },
+    'do-what-it-says': function(){
+        fs.readFile('random.txt', 'utf8', function(error, data){
+            if (error) {
+                return console.log(error);
+              }
+            data = data.split(",");
+            action = data[0];
+            search = data[1].replace(/"/g,"");
+            console.log(action);
+            console.log(search);
+            command[action](search);       
         })
-      console.log(results); 
-      });
+    }
 }
-
-function concertThis() {
-
-
-}
-
-function doWhatItSays() {
-
-}
+command[action]();
